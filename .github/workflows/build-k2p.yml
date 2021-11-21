@@ -44,9 +44,9 @@ jobs:
         # 插件配置 - 按需修改
         #####################################################################################
         # 打开QOS/FRP功能,QOS/FRP默认不开启
-        sed -i '' 's/CONFIG_FIRMWARE_INCLUDE_QOS=n/CONFIG_FIRMWARE_INCLUDE_QOS=y/g' configs/templates/${TNAME}.config # 开启QOS模块
-        sed -i '' 's/CONFIG_FIRMWARE_INCLUDE_FRPC=n/CONFIG_FIRMWARE_INCLUDE_FRPC=y/g' configs/templates/${TNAME}.config # 开启FRPC模块
-        sed -i '' 's/CONFIG_FIRMWARE_INCLUDE_FRPS=n/CONFIG_FIRMWARE_INCLUDE_FRPS=y/g' configs/templates/${TNAME}.config # 开启FRPS模块
+        sed -i 's/CONFIG_FIRMWARE_INCLUDE_QOS=n/CONFIG_FIRMWARE_INCLUDE_QOS=y/g' configs/templates/${TNAME}.config # 开启QOS模块
+        sed -i 's/CONFIG_FIRMWARE_INCLUDE_FRPC=n/CONFIG_FIRMWARE_INCLUDE_FRPC=y/g' configs/templates/${TNAME}.config # 开启FRPC模块
+        sed -i 's/CONFIG_FIRMWARE_INCLUDE_FRPS=n/CONFIG_FIRMWARE_INCLUDE_FRPS=y/g' configs/templates/${TNAME}.config # 开启FRPS模块
         # 增加smartdns拓展
         echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> configs/templates/${TNAME}.config # smartdns
         ####################################################################################
