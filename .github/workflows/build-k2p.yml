@@ -1,23 +1,22 @@
-name: Build K2P
+name: Build K2P_nano
 
-on: 
-#   release:
-#     types: [published]
-#  push:
-#    tags:
-#    - 'v*'
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+    - 'v*'
   #  branches: 
   #    - master
-  schedule:
-    - cron: 0 17 1,15 * *
-  workflow_dispatch:
-    inputs:
-#   watch:
-#     types: [started]
-
+  #  schedule:
+  #    - cron: 0 8 * * 5
+  watch:
+    types: [started]
+    
 jobs:
   build:
     runs-on: ubuntu-18.04
+    if: github.event.repository.owner.id == github.event.sender.id
 
     steps:
     - name: Checkout
@@ -27,66 +26,34 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo apt-get update
-        sudo apt-get -y install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd fakeroot \
-        cpio git python-docutils gettext automake autopoint texinfo build-essential help2man \
-        pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget libc-dev-bin
+        sudo apt install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd \
+        fakeroot kmod cpio git python3-docutils gettext automake autopoint \
+        texinfo build-essential help2man pkg-config zlib1g-dev libgmp3-dev \
+        libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget libc-dev-bin
     - name: Clone source code
       run: |
-        git clone --depth=1 https://github.com/hanwckf/rt-n56u.git
-        cd rt-n56u
-        cd toolchain-mipsel
+        git clone --depth=1 https://github.com/hanwckf/rt-n56u.git /opt/rt-n56u
+        cd /opt/rt-n56u/toolchain-mipsel
         sh dl_toolchain.sh
         mkdir -p /opt/images/
     - name: Build Firmware
       env:
-        TNAME: "K2P"
+        TNAME: "K2P_nano"
       run: |
-        cd rt-n56u
-        cwd=`pwd`
-        CONFIG_TOOLCHAIN_DIR=${cwd//\//\\\/}\\/toolchain-mipsel
-        cd trunk
-        for m in $TNAME;
-        do
-        if [ ! -f configs/templates/$m.config ] ; then
-        echo "configs/templates/$m.config not found "
-        exit 1
-        fi
-        cp -f configs/templates/$m.config .config
+        cd /opt/rt-n56u/trunk
+        # 插件配置 - 按需修改
         #####################################################################################
-        sed -i '/CONFIG_FIRMWARE_INCLUDE_MENTOHUST/d' .config #删除配置项MENTOHUST
-        sed -i '/CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER/d' .config #删除配置项SOFTETHERVPN
-        sed -i '/CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT/d' .config #删除配置项SOFTETHERVPN
-        sed -i '/CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD/d' .config #删除配置项SOFTETHERVPN
-        sed -i '/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT/d' .config #删除配置项SCUTCLIENT
-        sed -i '/CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS/d' .config #删除配置项SS plus+
-        sed -i '/CONFIG_FIRMWARE_INCLUDE_SSSERVER/d' .config #删除配置项SS server
-        sed -i '/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER/d' .config #删除配置项DNSFORWARDER
-        sed -i '/CONFIG_FIRMWARE_INCLUDE_FRPC/d' .config #删除配置项FRPC
-        sed -i '/CONFIG_FIRMWARE_INCLUDE_FRPS/d' .config #删除配置项FRPS
-        sed -i '/CONFIG_FIRMWARE_INCLUDE_TUNSAFE/d' .config #删除配置项TUNSAFE
-        sed -i '/CONFIG_FIRMWARE_INCLUDE_SRELAY/d' .config
-        ######################################################################
-        echo "CONFIG_FIRMWARE_INCLUDE_MENTOHUST=n" >> .config #MENTOHUST
-        echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER=n" >> .config #SOFTETHERVPN
-        echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT=n" >> .config #SOFTETHERVPN
-        echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD=n" >> .config #SOFTETHERVPN
-        echo "CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=n" >> .config #SCUTCLIENT
-        echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=y" >> .config #SS plus+
-        echo "CONFIG_FIRMWARE_INCLUDE_SSSERVER=n" >> .config #SS server
-        echo "CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=y" >> .config #DNSFORWARDER
-        echo "CONFIG_FIRMWARE_INCLUDE_FRPC=n" >> .config #内网穿透FRPC
-        echo "CONFIG_FIRMWARE_INCLUDE_FRPS=n" >> .config #内网穿透FRPS
-        echo "CONFIG_FIRMWARE_INCLUDE_TUNSAFE=n" >> .config #TUNSAFE
-        echo "CONFIG_FIRMWARE_INCLUDE_SRELAY=n" >> .config
+        # 打开QOS/FRP功能,QOS/FRP默认不开启
+        sed -i '' 's/CONFIG_FIRMWARE_INCLUDE_QOS=n/CONFIG_FIRMWARE_INCLUDE_QOS=y/g' configs/templates/${TNAME}.config # 开启QOS模块
+        sed -i '' 's/CONFIG_FIRMWARE_INCLUDE_FRPC=n/CONFIG_FIRMWARE_INCLUDE_FRPC=y/g' configs/templates/${TNAME}.config # 开启FRPC模块
+        sed -i '' 's/CONFIG_FIRMWARE_INCLUDE_FRPS=n/CONFIG_FIRMWARE_INCLUDE_FRPS=y/g' configs/templates/${TNAME}.config # 开启FRPS模块
+        # 增加smartdns拓展
+        echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> configs/templates/${TNAME}.config # smartdns
         ####################################################################################
-        sed -i "s/^CONFIG_TOOLCHAIN_DIR=.*$/CONFIG_TOOLCHAIN_DIR=${CONFIG_TOOLCHAIN_DIR}/g" .config
-        cp -f .config configs/templates/$m.config 
-        sudo ./clear_tree_simple
-        sudo ./build_firmware_modify $m 0
+        fakeroot ./build_firmware_modify ${TNAME}
         sudo mv -f images/*.trx /opt/images/
-        done
     - name: Upload firmware
       uses: actions/upload-artifact@v2
       with:
-        name: K2P-5.0
+        name: K2P_nano
         path: /opt/images/*.trx
