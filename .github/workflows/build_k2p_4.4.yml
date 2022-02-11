@@ -1,4 +1,4 @@
-name: Build K2P_nano-4.4
+name: Build K2P-4.4
 
 on:
   release:
@@ -37,13 +37,13 @@ jobs:
         mkdir -p /opt/images/
     - name: Build Firmware
       env:
-        TNAME: "K2P_nano"
+        TNAME: "K2P"
       run: |
         cd /opt/rt-n56u/trunk
         # 插件配置 - 按需修改
         #####################################################################################
-        sed -i 's/FRP_VER := 0.29.0/FRP_VER := 0.39.0/g' user/frp/Makefile  # 修改frp版本到0.39.0
-        sed -i 's/CONFIG_FIRMWARE_INCLUDE_FRPC=n/CONFIG_FIRMWARE_INCLUDE_FRPC=y/g' configs/templates/${TNAME}.config # 开启FRPC模块
+        # sed -i 's/FRP_VER := 0.29.0/FRP_VER := 0.39.0/g' user/frp/Makefile  # 修改frp版本到0.39.0
+        # sed -i 's/CONFIG_FIRMWARE_INCLUDE_FRPC=n/CONFIG_FIRMWARE_INCLUDE_FRPC=y/g' configs/templates/${TNAME}.config # 开启FRPC模块
         sed -i 's/CONFIG_FIRMWARE_INCLUDE_LRZSZ=n/CONFIG_FIRMWARE_INCLUDE_LRZSZ=y/g' configs/templates/${TNAME}.config # 开启LRZSZ模块
         
         echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> configs/templates/${TNAME}.config # enable smartdns
@@ -53,5 +53,5 @@ jobs:
     - name: Upload firmware
       uses: actions/upload-artifact@v2
       with:
-        name: K2P_nano-4.4
+        name: K2P-4.4
         path: /opt/images/*.trx
