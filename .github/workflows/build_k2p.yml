@@ -1,4 +1,4 @@
-name: Build K2P
+name: Build K2P_nano
 
 on:
   release:
@@ -38,7 +38,7 @@ jobs:
         mkdir -p /opt/images/
     - name: Build Firmware
       env:
-        TNAME: "K2P"
+        TNAME: "K2P_nano"
       run: |
         cd /opt/rt-n56u/trunk
         # 插件配置 - 按需修改
@@ -54,5 +54,5 @@ jobs:
     - name: Upload firmware
       uses: actions/upload-artifact@v2
       with:
-        name: K2P
+        name: K2P_nano
         path: /opt/images/*.trx
